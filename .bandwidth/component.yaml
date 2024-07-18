@@ -1,0 +1,20 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  schemaVersion: v1.0.0
+  name: vault-shim
+  description: Hashicorp Vault sidecar libraries
+  annotations:
+    github.com/project-slug: Bandwidth/vault-shim
+  organization: BW
+  costCenter: Development - Software Infra
+  platformType: AWS
+  buildPlatform: GitHub Actions
+spec:
+  type: Library
+  owner: github/band-swi
+  lifecycle: Prototype
+  dependsOn:
+    - resource:platform/AWS
+    - resource:cost-center/Development - Software Infra
+

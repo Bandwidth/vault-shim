@@ -9,4 +9,4 @@ RUN go mod download && go mod verify
 COPY . .
 RUN go build -ldflags="-s -w" -v -o /usr/local/bin/ ./...
 
-ENTRYPOINT ["docker-shim"]
+ENTRYPOINT ["vault-shim"]

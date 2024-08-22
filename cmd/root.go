@@ -22,7 +22,7 @@ var (
 	kubernetesJwtLocation string
 
 	rootCmd = &cobra.Command{
-		Use:          "docker-shim",
+		Use:          "vault-shim",
 		Short:        "Various utility functions to configure initialize a process' environment",
 		SilenceUsage: true,
 	}

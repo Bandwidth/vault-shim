@@ -254,7 +254,7 @@ EOF
 
 @test "Create aws secret policy" {
     run vault policy write aws-policy -<<EOF
-path "aws_deploy_role/sts/970349098957_deploy" {
+path "aws_deploy_role/sts/12345678901_deploy" {
   capabilities = ["update"]
 }
 
@@ -295,8 +295,8 @@ EOF
 }
 
 @test "Create aws secret role" {
-    run vault write aws_deploy_role/roles/970349098957_deploy \
-        role_arns=arn:aws:iam::970349098957:role/lab-vault-sts-role-for-testing-purposes \
+    run vault write aws_deploy_role/roles/12345678901_deploy \
+        role_arns=arn:aws:iam::12345678901:role/lab-vault-sts-role-for-testing-purposes \
         credential_type=assumed_role
 
     assert_status 0
@@ -352,7 +352,7 @@ EOF
 }
 
 @test "Output AWS credentials" {
-    run ./docker-shim --kubernetes-jwt-location=token aws-credentials --namespace="" --secret-path="aws_deploy_role" --account-id="970349098957" --vault-sts-role-name="970349098957_deploy" --aws-assume-role-name="lab-vault-sts-assume-role-for-testing"
+    run ./docker-shim --kubernetes-jwt-location=token aws-credentials --namespace="" --secret-path="aws_deploy_role" --account-id="12345678901" --vault-sts-role-name="12345678901_deploy" --aws-assume-role-name="lab-vault-sts-assume-role-for-testing"
     assert_status 0
     echo $output | jq -e .Version
     assert_status 0
@@ -365,71 +365,71 @@ EOF
 }
 
 @test "Write one AWS profile" {
-    export VAULT__FOO=AWS:/aws_deploy_role:970349098957:970349098957_deploy:lab-vault-sts-assume-role-for-testing
+    export VAULT__FOO=AWS:/aws_deploy_role:12345678901:12345678901_deploy:lab-vault-sts-assume-role-for-testing
     run ./docker-shim --kubernetes-jwt-location=token run-cmd --aws-config-file=aws-config-one-profile -- /usr/bin/env
     assert_status 0
     EXPECTED_FILE_OUTPUT='
 [profile FOO]
-credential_process = docker-shim aws-credentials --namespace="" --secret-path="aws_deploy_role" --account-id="970349098957" --vault-sts-role-name="970349098957_deploy" --aws-assume-role-name="lab-vault-sts-assume-role-for-testing" --vault-role=""'
+credential_process = docker-shim aws-credentials --namespace="" --secret-path="aws_deploy_role" --account-id="12345678901" --vault-sts-role-name="12345678901_deploy" --aws-assume-role-name="lab-vault-sts-assume-role-for-testing" --vault-role=""'
     cat aws-config-one-profile
     [ "$(< aws-config-one-profile)" == "$EXPECTED_FILE_OUTPUT" ]
     [[ "$output" == *"AWS_CONFIG_FILE=aws-config-one-profile"* ]]
 }
 @test "Write two AWS profiles" {
-    export VAULT__FOO=AWS:/aws_deploy_role:970349098957:970349098957_deploy:lab-vault-sts-assume-role-for-testing
-    export VAULT__BAR=AWS:/aws_deploy_role:970349098957:970349098957_deploy:lab-vault-sts-assume-role-for-testing
+    export VAULT__FOO=AWS:/aws_deploy_role:12345678901:12345678901_deploy:lab-vault-sts-assume-role-for-testing
+    export VAULT__BAR=AWS:/aws_deploy_role:12345678901:12345678901_deploy:lab-vault-sts-assume-role-for-testing
     run ./docker-shim --kubernetes-jwt-location=token run-cmd --aws-config-file=aws-config-two-profiles -- /usr/bin/env
     assert_status 0
     EXPECTED_FILE_OUTPUT='
 [profile BAR]
-credential_process = docker-shim aws-credentials --namespace="" --secret-path="aws_deploy_role" --account-id="970349098957" --vault-sts-role-name="970349098957_deploy" --aws-assume-role-name="lab-vault-sts-assume-role-for-testing" --vault-role=""
+credential_process = docker-shim aws-credentials --namespace="" --secret-path="aws_deploy_role" --account-id="12345678901" --vault-sts-role-name="12345678901_deploy" --aws-assume-role-name="lab-vault-sts-assume-role-for-testing" --vault-role=""
 
 [profile FOO]
-credential_process = docker-shim aws-credentials --namespace="" --secret-path="aws_deploy_role" --account-id="970349098957" --vault-sts-role-name="970349098957_deploy" --aws-assume-role-name="lab-vault-sts-assume-role-for-testing" --vault-role=""'
+credential_process = docker-shim aws-credentials --namespace="" --secret-path="aws_deploy_role" --account-id="12345678901" --vault-sts-role-name="12345678901_deploy" --aws-assume-role-name="lab-vault-sts-assume-role-for-testing" --vault-role=""'
     cat aws-config-two-profiles
     [ "$(< aws-config-two-profiles)" == "$EXPECTED_FILE_OUTPUT" ]
     [[ "$output" == *"AWS_CONFIG_FILE=aws-config-two-profiles"* ]]
 }
 @test "Write one AWS profile with auth role name" {
-    export VAULT__FOO=AWS:/aws_deploy_role:970349098957:970349098957_deploy:lab-vault-sts-assume-role-for-testing:some-separate-role
+    export VAULT__FOO=AWS:/aws_deploy_role:12345678901:12345678901_deploy:lab-vault-sts-assume-role-for-testing:some-separate-role
     run ./docker-shim --kubernetes-jwt-location=token run-cmd --aws-config-file=aws-config-one-profile-role-override -- /usr/bin/env
     assert_status 0
     EXPECTED_FILE_OUTPUT='
 [profile FOO]
-credential_process = docker-shim aws-credentials --namespace="" --secret-path="aws_deploy_role" --account-id="970349098957" --vault-sts-role-name="970349098957_deploy" --aws-assume-role-name="lab-vault-sts-assume-role-for-testing" --vault-role="some-separate-role"'
+credential_process = docker-shim aws-credentials --namespace="" --secret-path="aws_deploy_role" --account-id="12345678901" --vault-sts-role-name="12345678901_deploy" --aws-assume-role-name="lab-vault-sts-assume-role-for-testing" --vault-role="some-separate-role"'
     cat aws-config-one-profile-role-override
     [ "$(< aws-config-one-profile-role-override)" == "$EXPECTED_FILE_OUTPUT" ]
     [[ "$output" == *"AWS_CONFIG_FILE=aws-config-one-profile-role-override"* ]]
 }
 @test "Write one AWS profile with no assume role colon" {
-    export VAULT__FOO=AWS:/aws_deploy_role:970349098957:970349098957_deploy:
+    export VAULT__FOO=AWS:/aws_deploy_role:12345678901:12345678901_deploy:
     run ./docker-shim --kubernetes-jwt-location=token run-cmd --aws-config-file=aws-config-one-profile-no-assume-role-colon -- /usr/bin/env
     assert_status 0
     EXPECTED_FILE_OUTPUT='
 [profile FOO]
-credential_process = docker-shim aws-credentials --namespace="" --secret-path="aws_deploy_role" --account-id="970349098957" --vault-sts-role-name="970349098957_deploy" --aws-assume-role-name="" --vault-role=""'
+credential_process = docker-shim aws-credentials --namespace="" --secret-path="aws_deploy_role" --account-id="12345678901" --vault-sts-role-name="12345678901_deploy" --aws-assume-role-name="" --vault-role=""'
     cat aws-config-one-profile-no-assume-role-colon
     [ "$(< aws-config-one-profile-no-assume-role-colon)" == "$EXPECTED_FILE_OUTPUT" ]
     [[ "$output" == *"AWS_CONFIG_FILE=aws-config-one-profile-no-assume-role-colon"* ]]
 }
 @test "Write one AWS profile with no assume role" {
-    export VAULT__FOO=AWS:/aws_deploy_role:970349098957:970349098957_deploy
+    export VAULT__FOO=AWS:/aws_deploy_role:12345678901:12345678901_deploy
     run ./docker-shim --kubernetes-jwt-location=token run-cmd --aws-config-file=aws-config-one-profile-no-assume-role -- /usr/bin/env
     assert_status 0
     EXPECTED_FILE_OUTPUT='
 [profile FOO]
-credential_process = docker-shim aws-credentials --namespace="" --secret-path="aws_deploy_role" --account-id="970349098957" --vault-sts-role-name="970349098957_deploy" --aws-assume-role-name="" --vault-role=""'
+credential_process = docker-shim aws-credentials --namespace="" --secret-path="aws_deploy_role" --account-id="12345678901" --vault-sts-role-name="12345678901_deploy" --aws-assume-role-name="" --vault-role=""'
     cat aws-config-one-profile-no-assume-role
     [ "$(< aws-config-one-profile-no-assume-role)" == "$EXPECTED_FILE_OUTPUT" ]
     [[ "$output" == *"AWS_CONFIG_FILE=aws-config-one-profile-no-assume-role"* ]]
 }
 @test "Write one AWS profile with no assume role and auth role name" {
-    export VAULT__FOO=AWS:/aws_deploy_role:970349098957:970349098957_deploy::some-separate-role
+    export VAULT__FOO=AWS:/aws_deploy_role:12345678901:12345678901_deploy::some-separate-role
     run ./docker-shim --kubernetes-jwt-location=token run-cmd --aws-config-file=aws-config-one-profile-no-assume-role-override -- /usr/bin/env
     assert_status 0
     EXPECTED_FILE_OUTPUT='
 [profile FOO]
-credential_process = docker-shim aws-credentials --namespace="" --secret-path="aws_deploy_role" --account-id="970349098957" --vault-sts-role-name="970349098957_deploy" --aws-assume-role-name="" --vault-role="some-separate-role"'
+credential_process = docker-shim aws-credentials --namespace="" --secret-path="aws_deploy_role" --account-id="12345678901" --vault-sts-role-name="12345678901_deploy" --aws-assume-role-name="" --vault-role="some-separate-role"'
     cat aws-config-one-profile-no-assume-role-override
     [ "$(< aws-config-one-profile-no-assume-role-override)" == "$EXPECTED_FILE_OUTPUT" ]
     [[ "$output" == *"AWS_CONFIG_FILE=aws-config-one-profile-no-assume-role-override"* ]]

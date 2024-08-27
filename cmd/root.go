@@ -125,9 +125,7 @@ func GetVaultAddr() string {
 	if len(envVaultAddr) != 0 {
 		return envVaultAddr
 	}
-	fmt.Println("VAULT_ADDR not set, please set VAULT_ADDR")
-	os.Exit(1)
-	return "No VAULT_ADDR found"
+	return "http://localhost:8200"
 }
 
 func HasVaultEnvVariables(env []string) bool {

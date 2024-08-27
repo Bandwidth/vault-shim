@@ -1,4 +1,4 @@
-module github.com/Bandwidth/docker-shim
+module github.com/Bandwidth/vault-shim
 
 go 1.20
 

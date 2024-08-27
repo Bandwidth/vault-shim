@@ -9,4 +9,6 @@ RUN go mod download && go mod verify
 COPY . .
 RUN go build -ldflags="-s -w" -v -o /usr/local/bin/ ./...
 
+ENV VAULT_ADDR="http://localhost:8200"
+
 ENTRYPOINT ["vault-shim"]

@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/Bandwidth/docker-shim/vault"
+	"github.com/Bandwidth/vault-shim/vault"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -125,7 +125,9 @@ func GetVaultAddr() string {
 	if len(envVaultAddr) != 0 {
 		return envVaultAddr
 	}
-	return fmt.Errorf("VAULT_ADDR not set")
+	fmt.Println("VAULT_ADDR not set, please set VAULT_ADDR")
+	os.Exit(1)
+	return "No VAULT_ADDR found"
 }
 
 func HasVaultEnvVariables(env []string) bool {

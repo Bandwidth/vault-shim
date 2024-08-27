@@ -48,7 +48,7 @@ setup_file() {
     echo "" > $SETUP_TEARDOWN_OUTFILE
 
     #cd ../
-    #docker build -f test/Dockerfile . -t docker-shim
+    #docker build -f test/Dockerfile . -t vault-shim
     #cd test
 
     VAULT_TOKEN='root'
@@ -308,7 +308,7 @@ EOF
     assert_status 0
 }
 
-@test "Baseline test to ensure tests are setup correctly before testing docker-shim" {
+@test "Baseline test to ensure tests are setup correctly before testing vault-shim" {
     run vault write auth/kubernetes/login \
       jwt=$JWT \
       role="default"
@@ -317,7 +317,7 @@ EOF
 }
 
 @test "Run command with no vault envs" {
-    run ./docker-shim run-cmd -- /usr/bin/env
+    run ./vault-shim run-cmd -- /usr/bin/env
     assert_status 0
     [[ "$output" == *"AWS"* ]] # Assert that the env command was run that was passed to run-cmd
 }
@@ -326,7 +326,7 @@ EOF
     export VAULT__BAR=workloads/foo/bar::secret:test_secret:BAR
     export VAULT__FOO=workloads/foo/bar::secret:test_secret:FOO
     export VAULT__DIFFSECRET=workloads/foo/bar::secret:second_secret:APPLE
-    run ./docker-shim --kubernetes-jwt-location=token run-cmd -- /usr/bin/env
+    run ./vault-shim --kubernetes-jwt-location=token run-cmd -- /usr/bin/env
     assert_status 0
     [[ "$output" == *"BAR=BAZ"* ]]
     [[ "$output" == *"FOO=JAZ"* ]]
@@ -335,7 +335,7 @@ EOF
 
 @test "Read missing secret" {
     export VAULT__BAR=workloads/foo/bar::secret:test_secret:BAZ
-    run ./docker-shim --kubernetes-jwt-location=token run-cmd -- /usr/bin/env
+    run ./vault-shim --kubernetes-jwt-location=token run-cmd -- /usr/bin/env
     assert_status 1
     [[ "$output" == *"Secret key BAZ not found"* ]]
 }
@@ -345,14 +345,14 @@ EOF
     unset FOO
     export VAULT__BAR=workloads/foo/bar::secret:test_secret:BAR
     export VAULT__FOO=workloads/foo/baz::secret:baz_secret:FOO
-    run ./docker-shim --kubernetes-jwt-location=token run-cmd -- /usr/bin/env
+    run ./vault-shim --kubernetes-jwt-location=token run-cmd -- /usr/bin/env
     assert_status 0
     [[ "$output" == *"BAR=BAZ"* ]]
     [[ "$output" == *"FOO=BAR"* ]]
 }
 
 @test "Output AWS credentials" {
-    run ./docker-shim --kubernetes-jwt-location=token aws-credentials --namespace="" --secret-path="aws_deploy_role" --account-id="12345678901" --vault-sts-role-name="12345678901_deploy" --aws-assume-role-name="lab-vault-sts-assume-role-for-testing"
+    run ./vault-shim --kubernetes-jwt-location=token aws-credentials --namespace="" --secret-path="aws_deploy_role" --account-id="12345678901" --vault-sts-role-name="12345678901_deploy" --aws-assume-role-name="lab-vault-sts-assume-role-for-testing"
     assert_status 0
     echo $output | jq -e .Version
     assert_status 0
@@ -366,11 +366,11 @@ EOF
 
 @test "Write one AWS profile" {
     export VAULT__FOO=AWS:/aws_deploy_role:12345678901:12345678901_deploy:lab-vault-sts-assume-role-for-testing
-    run ./docker-shim --kubernetes-jwt-location=token run-cmd --aws-config-file=aws-config-one-profile -- /usr/bin/env
+    run ./vault-shim --kubernetes-jwt-location=token run-cmd --aws-config-file=aws-config-one-profile -- /usr/bin/env
     assert_status 0
     EXPECTED_FILE_OUTPUT='
 [profile FOO]
-credential_process = docker-shim aws-credentials --namespace="" --secret-path="aws_deploy_role" --account-id="12345678901" --vault-sts-role-name="12345678901_deploy" --aws-assume-role-name="lab-vault-sts-assume-role-for-testing" --vault-role=""'
+credential_process = vault-shim aws-credentials --namespace="" --secret-path="aws_deploy_role" --account-id="12345678901" --vault-sts-role-name="12345678901_deploy" --aws-assume-role-name="lab-vault-sts-assume-role-for-testing" --vault-role=""'
     cat aws-config-one-profile
     [ "$(< aws-config-one-profile)" == "$EXPECTED_FILE_OUTPUT" ]
     [[ "$output" == *"AWS_CONFIG_FILE=aws-config-one-profile"* ]]
@@ -378,58 +378,58 @@ credential_process = docker-shim aws-credentials --namespace="" --secret-path="a
 @test "Write two AWS profiles" {
     export VAULT__FOO=AWS:/aws_deploy_role:12345678901:12345678901_deploy:lab-vault-sts-assume-role-for-testing
     export VAULT__BAR=AWS:/aws_deploy_role:12345678901:12345678901_deploy:lab-vault-sts-assume-role-for-testing
-    run ./docker-shim --kubernetes-jwt-location=token run-cmd --aws-config-file=aws-config-two-profiles -- /usr/bin/env
+    run ./vault-shim --kubernetes-jwt-location=token run-cmd --aws-config-file=aws-config-two-profiles -- /usr/bin/env
     assert_status 0
     EXPECTED_FILE_OUTPUT='
 [profile BAR]
-credential_process = docker-shim aws-credentials --namespace="" --secret-path="aws_deploy_role" --account-id="12345678901" --vault-sts-role-name="12345678901_deploy" --aws-assume-role-name="lab-vault-sts-assume-role-for-testing" --vault-role=""
+credential_process = vault-shim aws-credentials --namespace="" --secret-path="aws_deploy_role" --account-id="12345678901" --vault-sts-role-name="12345678901_deploy" --aws-assume-role-name="lab-vault-sts-assume-role-for-testing" --vault-role=""
 
 [profile FOO]
-credential_process = docker-shim aws-credentials --namespace="" --secret-path="aws_deploy_role" --account-id="12345678901" --vault-sts-role-name="12345678901_deploy" --aws-assume-role-name="lab-vault-sts-assume-role-for-testing" --vault-role=""'
+credential_process = vault-shim aws-credentials --namespace="" --secret-path="aws_deploy_role" --account-id="12345678901" --vault-sts-role-name="12345678901_deploy" --aws-assume-role-name="lab-vault-sts-assume-role-for-testing" --vault-role=""'
     cat aws-config-two-profiles
     [ "$(< aws-config-two-profiles)" == "$EXPECTED_FILE_OUTPUT" ]
     [[ "$output" == *"AWS_CONFIG_FILE=aws-config-two-profiles"* ]]
 }
 @test "Write one AWS profile with auth role name" {
     export VAULT__FOO=AWS:/aws_deploy_role:12345678901:12345678901_deploy:lab-vault-sts-assume-role-for-testing:some-separate-role
-    run ./docker-shim --kubernetes-jwt-location=token run-cmd --aws-config-file=aws-config-one-profile-role-override -- /usr/bin/env
+    run ./vault-shim --kubernetes-jwt-location=token run-cmd --aws-config-file=aws-config-one-profile-role-override -- /usr/bin/env
     assert_status 0
     EXPECTED_FILE_OUTPUT='
 [profile FOO]
-credential_process = docker-shim aws-credentials --namespace="" --secret-path="aws_deploy_role" --account-id="12345678901" --vault-sts-role-name="12345678901_deploy" --aws-assume-role-name="lab-vault-sts-assume-role-for-testing" --vault-role="some-separate-role"'
+credential_process = vault-shim aws-credentials --namespace="" --secret-path="aws_deploy_role" --account-id="12345678901" --vault-sts-role-name="12345678901_deploy" --aws-assume-role-name="lab-vault-sts-assume-role-for-testing" --vault-role="some-separate-role"'
     cat aws-config-one-profile-role-override
     [ "$(< aws-config-one-profile-role-override)" == "$EXPECTED_FILE_OUTPUT" ]
     [[ "$output" == *"AWS_CONFIG_FILE=aws-config-one-profile-role-override"* ]]
 }
 @test "Write one AWS profile with no assume role colon" {
     export VAULT__FOO=AWS:/aws_deploy_role:12345678901:12345678901_deploy:
-    run ./docker-shim --kubernetes-jwt-location=token run-cmd --aws-config-file=aws-config-one-profile-no-assume-role-colon -- /usr/bin/env
+    run ./vault-shim --kubernetes-jwt-location=token run-cmd --aws-config-file=aws-config-one-profile-no-assume-role-colon -- /usr/bin/env
     assert_status 0
     EXPECTED_FILE_OUTPUT='
 [profile FOO]
-credential_process = docker-shim aws-credentials --namespace="" --secret-path="aws_deploy_role" --account-id="12345678901" --vault-sts-role-name="12345678901_deploy" --aws-assume-role-name="" --vault-role=""'
+credential_process = vault-shim aws-credentials --namespace="" --secret-path="aws_deploy_role" --account-id="12345678901" --vault-sts-role-name="12345678901_deploy" --aws-assume-role-name="" --vault-role=""'
     cat aws-config-one-profile-no-assume-role-colon
     [ "$(< aws-config-one-profile-no-assume-role-colon)" == "$EXPECTED_FILE_OUTPUT" ]
     [[ "$output" == *"AWS_CONFIG_FILE=aws-config-one-profile-no-assume-role-colon"* ]]
 }
 @test "Write one AWS profile with no assume role" {
     export VAULT__FOO=AWS:/aws_deploy_role:12345678901:12345678901_deploy
-    run ./docker-shim --kubernetes-jwt-location=token run-cmd --aws-config-file=aws-config-one-profile-no-assume-role -- /usr/bin/env
+    run ./vault-shim --kubernetes-jwt-location=token run-cmd --aws-config-file=aws-config-one-profile-no-assume-role -- /usr/bin/env
     assert_status 0
     EXPECTED_FILE_OUTPUT='
 [profile FOO]
-credential_process = docker-shim aws-credentials --namespace="" --secret-path="aws_deploy_role" --account-id="12345678901" --vault-sts-role-name="12345678901_deploy" --aws-assume-role-name="" --vault-role=""'
+credential_process = vault-shim aws-credentials --namespace="" --secret-path="aws_deploy_role" --account-id="12345678901" --vault-sts-role-name="12345678901_deploy" --aws-assume-role-name="" --vault-role=""'
     cat aws-config-one-profile-no-assume-role
     [ "$(< aws-config-one-profile-no-assume-role)" == "$EXPECTED_FILE_OUTPUT" ]
     [[ "$output" == *"AWS_CONFIG_FILE=aws-config-one-profile-no-assume-role"* ]]
 }
 @test "Write one AWS profile with no assume role and auth role name" {
     export VAULT__FOO=AWS:/aws_deploy_role:12345678901:12345678901_deploy::some-separate-role
-    run ./docker-shim --kubernetes-jwt-location=token run-cmd --aws-config-file=aws-config-one-profile-no-assume-role-override -- /usr/bin/env
+    run ./vault-shim --kubernetes-jwt-location=token run-cmd --aws-config-file=aws-config-one-profile-no-assume-role-override -- /usr/bin/env
     assert_status 0
     EXPECTED_FILE_OUTPUT='
 [profile FOO]
-credential_process = docker-shim aws-credentials --namespace="" --secret-path="aws_deploy_role" --account-id="12345678901" --vault-sts-role-name="12345678901_deploy" --aws-assume-role-name="" --vault-role="some-separate-role"'
+credential_process = vault-shim aws-credentials --namespace="" --secret-path="aws_deploy_role" --account-id="12345678901" --vault-sts-role-name="12345678901_deploy" --aws-assume-role-name="" --vault-role="some-separate-role"'
     cat aws-config-one-profile-no-assume-role-override
     [ "$(< aws-config-one-profile-no-assume-role-override)" == "$EXPECTED_FILE_OUTPUT" ]
     [[ "$output" == *"AWS_CONFIG_FILE=aws-config-one-profile-no-assume-role-override"* ]]

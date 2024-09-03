@@ -68,6 +68,6 @@ cdk.context.json
 .env.local
 
 # Executable
-*docker-shim*
+*vault-shim*
 
-!docker-shim-installer.sh
+!vault-shim-installer.sh

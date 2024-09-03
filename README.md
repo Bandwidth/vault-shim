@@ -167,11 +167,9 @@ spec:
 ```
 ## FAQ
 ### Where can I download vault-shim?
-It's in artifactory located [here](https://bandwidth.jfrog.io/ui/repos/tree/General/generic-local-prod/vault-shim). You will want to download the installer and run the script during the build process.
+You will want to download the installer from GitHub and run the script during the build process.
 ### Why do I need to download an installer?
 The installer downloads the right version of vault-shim for the platform you are running on.
-### How do my workloads get access to vault?
-Check out our vault user guide [here](https://bandwidth-jira.atlassian.net/wiki/spaces/SWI/pages/4365156842/Vault+-+User+Guide)
 ### How does vault-shim auth with vault?
 It will try to auth to vault in the following order:
 1) Checks for vault token on disk at $HOME/.vault-token

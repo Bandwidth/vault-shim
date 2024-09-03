@@ -44,7 +44,7 @@ var AwsSecretRegex, _ = regexp.Compile(AWS_SECRET_REGEX_PATTERN)
 
 const awsProfileTemplate = `
 [profile {{.ProfileName}}]
-credential_process = docker-shim aws-credentials --namespace="{{.Namespace}}" --secret-path="{{.SecretPath}}" --account-id="{{.AccountID}}" --vault-sts-role-name="{{.VaultStsRoleName}}" --aws-assume-role-name="{{.AwsAssumeRoleName}}" --vault-role="{{.VaultAuthRoleName}}"
+credential_process = vault-shim aws-credentials --namespace="{{.Namespace}}" --secret-path="{{.SecretPath}}" --account-id="{{.AccountID}}" --vault-sts-role-name="{{.VaultStsRoleName}}" --aws-assume-role-name="{{.AwsAssumeRoleName}}" --vault-role="{{.VaultAuthRoleName}}"
 `
 
 type GenericSecret struct {

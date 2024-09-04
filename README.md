@@ -78,16 +78,11 @@ SECRETONE=whateversecretvaluewassetforsecretoneFIRST_KEY # the run-cmd here was 
 SECRETTWO=whateversecretvaluewassetforsecrettwoSECOND_KEY
 ```
 ### Application Container Example
-The following shows building a container that uses vault-shim to run and pass secrets to an application. Notice that the shim requires
-sensitive Artifactory credentials. These should not get passed to the final image. The multi-stage build is used to avoid this.
+The following shows building a container that uses vault-shim to run and pass secrets to an application. These should not get passed to the final image. The multi-stage build is used to avoid this.
 
 Dockerfile
 ```dockerfile
 FROM python:3.12 as vault-shim
-
-# avoid baking the artifactory creds into the final image with the multi-stage build
-ARG ARTIFACTORY_ACCESS_TOKEN_USERNAME
-ARG ARTIFACTORY_ACCESS_TOKEN
 
 RUN curl -H 'Accept: application/vnd.github.v3.raw' -L -o vault-shim-installer.sh https://raw.githubusercontent.com/Bandwidth/vault-shim/<VERSION>/vault-shim-installer.sh
 RUN chmod +x "vault-shim-installer.sh"
@@ -122,19 +117,12 @@ Dockerfile
 ```dockerfile
 FROM python:3.12 as vault-shim
 
-# avoid baking the artifactory creds into the final image with the multi-stage build
-ARG ARTIFACTORY_ACCESS_TOKEN_USERNAME
-ARG ARTIFACTORY_ACCESS_TOKEN
-
 RUN curl -H 'Accept: application/vnd.github.v3.raw' -L -o vault-shim-installer.sh https://raw.githubusercontent.com/Bandwidth/vault-shim/<VERSION>/vault-shim-installer.sh
 RUN chmod +x "vault-shim-installer.sh"
 RUN ./vault-shim-installer.sh
 
 ########## Second Stage ##########
 FROM example.jfrog.io/eclipse-temurin:19.0.2_7-jre
-
-ARG ARTIFACTORY_ACCESS_TOKEN_USERNAME
-ARG ARTIFACTORY_ACCESS_TOKEN
 
 COPY --from=vault-shim /usr/local/bin/vault-shim /usr/local/bin/vault-shim
 

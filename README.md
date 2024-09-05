@@ -27,7 +27,7 @@ To install vault-shim, download the installer from GitHub and execute it.
 ```shell
 curl -H 'Accept: application/vnd.github.v3.raw' -L -o vault-shim-installer.sh https://raw.githubusercontent.com/Bandwidth/vault-shim/<VERSION>/vault-shim-installer.sh
 chmod +x vault-shim-installer.sh
-./vault-shim-installer.sh
+./vault-shim-installer.sh "<VERSION>"
 
 vault-shim --help
 ```
@@ -85,8 +85,8 @@ Dockerfile
 FROM python:3.12 as vault-shim
 
 RUN curl -H 'Accept: application/vnd.github.v3.raw' -L -o vault-shim-installer.sh https://raw.githubusercontent.com/Bandwidth/vault-shim/<VERSION>/vault-shim-installer.sh
-RUN chmod +x "vault-shim-installer.sh"
-RUN ./vault-shim-installer.sh
+RUN chmod +x "vault-shim-installer.sh" 
+RUN ./vault-shim-installer.sh "<VERSION>"
 
 ########## Second Stage ##########
 FROM python:3.12
@@ -119,7 +119,7 @@ FROM python:3.12 as vault-shim
 
 RUN curl -H 'Accept: application/vnd.github.v3.raw' -L -o vault-shim-installer.sh https://raw.githubusercontent.com/Bandwidth/vault-shim/<VERSION>/vault-shim-installer.sh
 RUN chmod +x "vault-shim-installer.sh"
-RUN ./vault-shim-installer.sh
+RUN ./vault-shim-installer.sh "<VERSION>"
 
 ########## Second Stage ##########
 FROM example.jfrog.io/eclipse-temurin:19.0.2_7-jre

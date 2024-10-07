@@ -7,7 +7,8 @@ if [ -z "$version" ]; then
 fi
 
 # check if the version starts without a 'v', if so, add it
-if [ "${version:0:1}" != "v" ]; then
+firstchar="$(echo $version | cut -c1-1)"
+if [ "$firstchar" != "v" ]; then
   version="v$version"
 fi
 

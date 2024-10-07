@@ -2,6 +2,7 @@
 # Make sure to check the documentation at https://goreleaser.com
 project_name: vault-shim
 builds:
+  - id: vault-shim
   - main: ./vault-shim.go
   - env:
       - CGO_ENABLED=0

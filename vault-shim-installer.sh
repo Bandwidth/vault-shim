@@ -10,11 +10,9 @@ case "$arch" in
   aarch64) arch="arm64" ;;
 esac
 
-echo "Installing vault-shim"
+echo "Installing vault-shim version $version"
 echo "os: $os"
 echo "arch: $arch"
 
-# purposefully leaving the filename on the tar so that we know which shim was downloaded if we ever have to shell in and diagnose an issue
-curl -L "https://github.com/Bandwidth/vault-shim/tarball/v${version}" --output "/usr/local/bin/vault-shim_${os}_${arch}.tar.gz"
-
+curl -L "https://github.com/Bandwidth/vault-shim/releases/download/v${version}/vault-shim_${os}_${arch}.tar.gz" --output "/usr/local/bin/vault-shim_${os}_${arch}.tar.gz"
 tar xzf "/usr/local/bin/vault-shim_${os}_${arch}.tar.gz" -C "/usr/local/bin"

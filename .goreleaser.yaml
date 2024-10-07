@@ -3,8 +3,8 @@
 project_name: vault-shim
 builds:
   - id: vault-shim
-  - main: ./vault-shim.go
-  - env:
+    main: ./vault-shim.go
+    env:
       - CGO_ENABLED=0
     goos:
       - linux

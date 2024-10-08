@@ -101,7 +101,7 @@ func initConfig() {
 func awsAuth() error {
 	token, err := vault.GetVaultTokenAwsAuth(vaultRoleName, vaultAddr, vaultAwsAuthMount)
 	if err != nil {
-		return fmt.Errorf("vault error aws auth: %w", err)
+		return fmt.Errorf("vault aws auth error: %w", err)
 	}
 	vaultToken = token
 	return nil
@@ -111,7 +111,7 @@ func kubeAuth() error {
 	if vault.IsKubeServiceAccountJwtOnFile(kubernetesJwtLocation) {
 		token, err := vault.GetVaultTokenKubeJwtAuth(vaultRoleName, vaultAddr, kubernetesJwtLocation)
 		if err != nil {
-			return fmt.Errorf("vault error kube auth: %w", err)
+			return fmt.Errorf("vault kube auth error: %w", err)
 		}
 		vaultToken = token
 	}

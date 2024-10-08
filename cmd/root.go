@@ -56,7 +56,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&vaultAddr, "vault-addr", GetVaultAddr(), "the vault address")
 	rootCmd.PersistentFlags().StringVar(&vaultAwsAuthMount, "vault-aws-mount", "aws_iam", "the vault mount point for AWS auth")
 	rootCmd.PersistentFlags().StringVar(&kubernetesJwtLocation, "kubernetes-jwt-location", "/var/run/secrets/kubernetes.io/serviceaccount/token", "the location of kubernetes jwt token")
-	rootCmd.PersistentFlags().StringVar(&authType, "auth-type", "aws", "aws or kubernetes, for EKS use AWS")
+	rootCmd.PersistentFlags().StringVar(&authType, "auth-type", "", "aws or kubernetes, for EKS use AWS")
 
 	//rootCmd.PersistentFlags().Bool("viper", true, "use Viper for configuration")
 	//if err := viper.ReadInConfig(); err != nil && !os.IsNotExist(err) {

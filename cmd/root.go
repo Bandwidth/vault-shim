@@ -20,6 +20,7 @@ var (
 	vaultToken            string
 	vaultAwsAuthMount     string
 	kubernetesJwtLocation string
+	authType              string
 
 	rootCmd = &cobra.Command{
 		Use:          "vault-shim",
@@ -55,6 +56,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&vaultAddr, "vault-addr", GetVaultAddr(), "the vault address")
 	rootCmd.PersistentFlags().StringVar(&vaultAwsAuthMount, "vault-aws-mount", "aws_iam", "the vault mount point for AWS auth")
 	rootCmd.PersistentFlags().StringVar(&kubernetesJwtLocation, "kubernetes-jwt-location", "/var/run/secrets/kubernetes.io/serviceaccount/token", "the location of kubernetes jwt token")
+	rootCmd.PersistentFlags().StringVar(&authType, "auth-type", "", "aws or kubernetes, for EKS use AWS")
 
 	//rootCmd.PersistentFlags().Bool("viper", true, "use Viper for configuration")
 	//if err := viper.ReadInConfig(); err != nil && !os.IsNotExist(err) {
@@ -66,6 +68,7 @@ func init() {
 	viper.BindPFlag("vault-addr", rootCmd.PersistentFlags().Lookup("vault-addr"))
 	viper.BindPFlag("vault-aws-mount", rootCmd.PersistentFlags().Lookup("vault-aws-mount"))
 	viper.BindPFlag("kubernetes-jwt-location", rootCmd.PersistentFlags().Lookup("kubernetes-jwt-location"))
+	viper.BindPFlag("auth-type", rootCmd.PersistentFlags().Lookup("auth-type"))
 }
 
 func initConfig() {
@@ -95,28 +98,55 @@ func initConfig() {
 	}
 }
 
-func GetVaultToken() error {
-	existingVaultToken := vault.GetExistingVaultToken()
-	if len(existingVaultToken) != 0 && vault.IsTokenValid(existingVaultToken, vaultAddr) {
-		vaultToken = existingVaultToken
-		return nil
+func awsAuth() error {
+	token, err := vault.GetVaultTokenAwsAuth(vaultRoleName, vaultAddr, vaultAwsAuthMount)
+	if err != nil {
+		return fmt.Errorf("vault aws auth error: %w", err)
 	}
+	vaultToken = token
+	return nil
+}
 
+func kubeAuth() error {
 	if vault.IsKubeServiceAccountJwtOnFile(kubernetesJwtLocation) {
 		token, err := vault.GetVaultTokenKubeJwtAuth(vaultRoleName, vaultAddr, kubernetesJwtLocation)
 		if err != nil {
 			return fmt.Errorf("vault kube auth error: %w", err)
 		}
 		vaultToken = token
+	}
+	return nil
+}
+
+func GetVaultToken() error {
+	existingVaultToken := vault.GetExistingVaultToken()
+	if len(existingVaultToken) != 0 && vault.IsTokenValid(existingVaultToken, vaultAddr) {
+		vaultToken = existingVaultToken
 		return nil
 	}
-
-	token, err := vault.GetVaultTokenAwsAuth(vaultRoleName, vaultAddr, vaultAwsAuthMount)
-	if err != nil {
-		return fmt.Errorf("vault aws auth error: %w", err)
+	switch authType {
+	case "aws":
+		err := awsAuth()
+		if err != nil {
+			return err
+		}
+	case "kubernetes":
+		err := kubeAuth()
+		if err != nil {
+			return err
+		}
+	default:
+		if vault.IsKubeServiceAccountJwtOnFile(kubernetesJwtLocation) {
+			err := kubeAuth()
+			if err != nil {
+				return err
+			}
+		}
+		err := awsAuth()
+		if err != nil {
+			return err
+		}
 	}
-	vaultToken = token
-
 	return nil
 }
 

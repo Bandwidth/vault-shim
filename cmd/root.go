@@ -111,7 +111,7 @@ func kubeAuth() error {
 	if vault.IsKubeServiceAccountJwtOnFile(kubernetesJwtLocation) {
 		token, err := vault.GetVaultTokenKubeJwtAuth(vaultRoleName, vaultAddr, kubernetesJwtLocation)
 		if err != nil {
-			return fmt.Errorf("vault error: %w", err)
+			return fmt.Errorf("vault error kube auth: %w", err)
 		}
 		vaultToken = token
 	}

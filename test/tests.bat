@@ -10,6 +10,9 @@ VAULT_TOKEN='root'
 VAULT_STARTUP_TIMEOUT=15
 VAULT_IMAGE=hashicorp/vault-enterprise
 
+# An AWS test account is required for testing.
+[ ${AWS_TEST_ACCOUNT:?} ]
+
 # Our vault license is required for namespaces.
 [ ${VAULT_LICENSE:?} ]
 
@@ -254,7 +257,7 @@ EOF
 
 @test "Create aws secret policy" {
     run vault policy write aws-policy -<<EOF
-path "aws_deploy_role/sts/12345678901_deploy" {
+path "aws_deploy_role/sts/${AWS_TEST_ACCOUNT}_deploy" {
   capabilities = ["update"]
 }
 
@@ -295,8 +298,8 @@ EOF
 }
 
 @test "Create aws secret role" {
-    run vault write aws_deploy_role/roles/12345678901_deploy \
-        role_arns=arn:aws:iam::12345678901:role/lab-vault-sts-role-for-testing-purposes \
+    run vault write aws_deploy_role/roles/${AWS_TEST_ACCOUNT}_deploy \
+        role_arns=arn:aws:iam::${AWS_TEST_ACCOUNT}:role/lab-vault-sts-role-for-testing-purposes \
         credential_type=assumed_role
 
     assert_status 0
@@ -326,7 +329,7 @@ EOF
     export VAULT__BAR=workloads/foo/bar::secret:test_secret:BAR
     export VAULT__FOO=workloads/foo/bar::secret:test_secret:FOO
     export VAULT__DIFFSECRET=workloads/foo/bar::secret:second_secret:APPLE
-    run ./vault-shim --kubernetes-jwt-location=token run-cmd -- /usr/bin/env
+    run ./vault-shim --kubernetes-jwt-location=token --auth-type=kubernetes run-cmd -- /usr/bin/env
     assert_status 0
     [[ "$output" == *"BAR=BAZ"* ]]
     [[ "$output" == *"FOO=JAZ"* ]]
@@ -335,7 +338,7 @@ EOF
 
 @test "Read missing secret" {
     export VAULT__BAR=workloads/foo/bar::secret:test_secret:BAZ
-    run ./vault-shim --kubernetes-jwt-location=token run-cmd -- /usr/bin/env
+    run ./vault-shim --kubernetes-jwt-location=token --auth-type=kubernetes run-cmd -- /usr/bin/env
     assert_status 1
     [[ "$output" == *"Secret key BAZ not found"* ]]
 }
@@ -345,14 +348,14 @@ EOF
     unset FOO
     export VAULT__BAR=workloads/foo/bar::secret:test_secret:BAR
     export VAULT__FOO=workloads/foo/baz::secret:baz_secret:FOO
-    run ./vault-shim --kubernetes-jwt-location=token run-cmd -- /usr/bin/env
+    run ./vault-shim --kubernetes-jwt-location=token --auth-type=kubernetes run-cmd -- /usr/bin/env
     assert_status 0
     [[ "$output" == *"BAR=BAZ"* ]]
     [[ "$output" == *"FOO=BAR"* ]]
 }
 
 @test "Output AWS credentials" {
-    run ./vault-shim --kubernetes-jwt-location=token aws-credentials --namespace="" --secret-path="aws_deploy_role" --account-id="12345678901" --vault-sts-role-name="12345678901_deploy" --aws-assume-role-name="lab-vault-sts-assume-role-for-testing"
+    run ./vault-shim --kubernetes-jwt-location=token aws-credentials --auth-type=kubernetes --namespace="" --secret-path="aws_deploy_role" --account-id="${AWS_TEST_ACCOUNT}" --vault-sts-role-name="${AWS_TEST_ACCOUNT}_deploy" --aws-assume-role-name="lab-vault-sts-assume-role-for-testing"
     assert_status 0
     echo $output | jq -e .Version
     assert_status 0
@@ -365,71 +368,71 @@ EOF
 }
 
 @test "Write one AWS profile" {
-    export VAULT__FOO=AWS:/aws_deploy_role:12345678901:12345678901_deploy:lab-vault-sts-assume-role-for-testing
-    run ./vault-shim --kubernetes-jwt-location=token run-cmd --aws-config-file=aws-config-one-profile -- /usr/bin/env
+    export VAULT__FOO=AWS:/aws_deploy_role:${AWS_TEST_ACCOUNT}:${AWS_TEST_ACCOUNT}_deploy:lab-vault-sts-assume-role-for-testing
+    run ./vault-shim --kubernetes-jwt-location=token --auth-type=kubernetes run-cmd --aws-config-file=aws-config-one-profile -- /usr/bin/env
     assert_status 0
-    EXPECTED_FILE_OUTPUT='
+    EXPECTED_FILE_OUTPUT="
 [profile FOO]
-credential_process = vault-shim aws-credentials --namespace="" --secret-path="aws_deploy_role" --account-id="12345678901" --vault-sts-role-name="12345678901_deploy" --aws-assume-role-name="lab-vault-sts-assume-role-for-testing" --vault-role=""'
+credential_process = vault-shim aws-credentials --namespace=\"\" --secret-path=\"aws_deploy_role\" --account-id=\"${AWS_TEST_ACCOUNT}\" --vault-sts-role-name=\"${AWS_TEST_ACCOUNT}_deploy\" --aws-assume-role-name=\"lab-vault-sts-assume-role-for-testing\" --vault-role=\"\""
     cat aws-config-one-profile
     [ "$(< aws-config-one-profile)" == "$EXPECTED_FILE_OUTPUT" ]
     [[ "$output" == *"AWS_CONFIG_FILE=aws-config-one-profile"* ]]
 }
 @test "Write two AWS profiles" {
-    export VAULT__FOO=AWS:/aws_deploy_role:12345678901:12345678901_deploy:lab-vault-sts-assume-role-for-testing
-    export VAULT__BAR=AWS:/aws_deploy_role:12345678901:12345678901_deploy:lab-vault-sts-assume-role-for-testing
-    run ./vault-shim --kubernetes-jwt-location=token run-cmd --aws-config-file=aws-config-two-profiles -- /usr/bin/env
+    export VAULT__FOO=AWS:/aws_deploy_role:${AWS_TEST_ACCOUNT}:${AWS_TEST_ACCOUNT}_deploy:lab-vault-sts-assume-role-for-testing
+    export VAULT__BAR=AWS:/aws_deploy_role:${AWS_TEST_ACCOUNT}:${AWS_TEST_ACCOUNT}_deploy:lab-vault-sts-assume-role-for-testing
+    run ./vault-shim --kubernetes-jwt-location=token --auth-type=kubernetes run-cmd --aws-config-file=aws-config-two-profiles -- /usr/bin/env
     assert_status 0
-    EXPECTED_FILE_OUTPUT='
+    EXPECTED_FILE_OUTPUT="
 [profile BAR]
-credential_process = vault-shim aws-credentials --namespace="" --secret-path="aws_deploy_role" --account-id="12345678901" --vault-sts-role-name="12345678901_deploy" --aws-assume-role-name="lab-vault-sts-assume-role-for-testing" --vault-role=""
+credential_process = vault-shim aws-credentials --namespace=\"\" --secret-path=\"aws_deploy_role\" --account-id=\"${AWS_TEST_ACCOUNT}\" --vault-sts-role-name=\"${AWS_TEST_ACCOUNT}_deploy\" --aws-assume-role-name=\"lab-vault-sts-assume-role-for-testing\" --vault-role=\"\"
 
 [profile FOO]
-credential_process = vault-shim aws-credentials --namespace="" --secret-path="aws_deploy_role" --account-id="12345678901" --vault-sts-role-name="12345678901_deploy" --aws-assume-role-name="lab-vault-sts-assume-role-for-testing" --vault-role=""'
+credential_process = vault-shim aws-credentials --namespace=\"\" --secret-path=\"aws_deploy_role\" --account-id=\"${AWS_TEST_ACCOUNT}\" --vault-sts-role-name=\"${AWS_TEST_ACCOUNT}_deploy\" --aws-assume-role-name=\"lab-vault-sts-assume-role-for-testing\" --vault-role=\"\""
     cat aws-config-two-profiles
     [ "$(< aws-config-two-profiles)" == "$EXPECTED_FILE_OUTPUT" ]
     [[ "$output" == *"AWS_CONFIG_FILE=aws-config-two-profiles"* ]]
 }
 @test "Write one AWS profile with auth role name" {
-    export VAULT__FOO=AWS:/aws_deploy_role:12345678901:12345678901_deploy:lab-vault-sts-assume-role-for-testing:some-separate-role
-    run ./vault-shim --kubernetes-jwt-location=token run-cmd --aws-config-file=aws-config-one-profile-role-override -- /usr/bin/env
+    export VAULT__FOO=AWS:/aws_deploy_role:${AWS_TEST_ACCOUNT}:${AWS_TEST_ACCOUNT}_deploy:lab-vault-sts-assume-role-for-testing:some-separate-role
+    run ./vault-shim --kubernetes-jwt-location=token --auth-type=kubernetes run-cmd --aws-config-file=aws-config-one-profile-role-override -- /usr/bin/env
     assert_status 0
-    EXPECTED_FILE_OUTPUT='
+    EXPECTED_FILE_OUTPUT="
 [profile FOO]
-credential_process = vault-shim aws-credentials --namespace="" --secret-path="aws_deploy_role" --account-id="12345678901" --vault-sts-role-name="12345678901_deploy" --aws-assume-role-name="lab-vault-sts-assume-role-for-testing" --vault-role="some-separate-role"'
+credential_process = vault-shim aws-credentials --namespace=\"\" --secret-path=\"aws_deploy_role\" --account-id=\"${AWS_TEST_ACCOUNT}\" --vault-sts-role-name=\"${AWS_TEST_ACCOUNT}_deploy\" --aws-assume-role-name=\"lab-vault-sts-assume-role-for-testing\" --vault-role=\"some-separate-role\""
     cat aws-config-one-profile-role-override
     [ "$(< aws-config-one-profile-role-override)" == "$EXPECTED_FILE_OUTPUT" ]
     [[ "$output" == *"AWS_CONFIG_FILE=aws-config-one-profile-role-override"* ]]
 }
 @test "Write one AWS profile with no assume role colon" {
-    export VAULT__FOO=AWS:/aws_deploy_role:12345678901:12345678901_deploy:
-    run ./vault-shim --kubernetes-jwt-location=token run-cmd --aws-config-file=aws-config-one-profile-no-assume-role-colon -- /usr/bin/env
+    export VAULT__FOO=AWS:/aws_deploy_role:${AWS_TEST_ACCOUNT}:${AWS_TEST_ACCOUNT}_deploy:
+    run ./vault-shim --kubernetes-jwt-location=token --auth-type=kubernetes run-cmd --aws-config-file=aws-config-one-profile-no-assume-role-colon -- /usr/bin/env
     assert_status 0
-    EXPECTED_FILE_OUTPUT='
+    EXPECTED_FILE_OUTPUT="
 [profile FOO]
-credential_process = vault-shim aws-credentials --namespace="" --secret-path="aws_deploy_role" --account-id="12345678901" --vault-sts-role-name="12345678901_deploy" --aws-assume-role-name="" --vault-role=""'
+credential_process = vault-shim aws-credentials --namespace=\"\" --secret-path=\"aws_deploy_role\" --account-id=\"${AWS_TEST_ACCOUNT}\" --vault-sts-role-name=\"${AWS_TEST_ACCOUNT}_deploy\" --aws-assume-role-name=\"\" --vault-role=\"\""
     cat aws-config-one-profile-no-assume-role-colon
     [ "$(< aws-config-one-profile-no-assume-role-colon)" == "$EXPECTED_FILE_OUTPUT" ]
     [[ "$output" == *"AWS_CONFIG_FILE=aws-config-one-profile-no-assume-role-colon"* ]]
 }
 @test "Write one AWS profile with no assume role" {
-    export VAULT__FOO=AWS:/aws_deploy_role:12345678901:12345678901_deploy
-    run ./vault-shim --kubernetes-jwt-location=token run-cmd --aws-config-file=aws-config-one-profile-no-assume-role -- /usr/bin/env
+    export VAULT__FOO=AWS:/aws_deploy_role:${AWS_TEST_ACCOUNT}:${AWS_TEST_ACCOUNT}_deploy
+    run ./vault-shim --kubernetes-jwt-location=token --auth-type=kubernetes run-cmd --aws-config-file=aws-config-one-profile-no-assume-role -- /usr/bin/env
     assert_status 0
-    EXPECTED_FILE_OUTPUT='
+    EXPECTED_FILE_OUTPUT="
 [profile FOO]
-credential_process = vault-shim aws-credentials --namespace="" --secret-path="aws_deploy_role" --account-id="12345678901" --vault-sts-role-name="12345678901_deploy" --aws-assume-role-name="" --vault-role=""'
+credential_process = vault-shim aws-credentials --namespace=\"\" --secret-path=\"aws_deploy_role\" --account-id=\"${AWS_TEST_ACCOUNT}\" --vault-sts-role-name=\"${AWS_TEST_ACCOUNT}_deploy\" --aws-assume-role-name=\"\" --vault-role=\"\""
     cat aws-config-one-profile-no-assume-role
     [ "$(< aws-config-one-profile-no-assume-role)" == "$EXPECTED_FILE_OUTPUT" ]
     [[ "$output" == *"AWS_CONFIG_FILE=aws-config-one-profile-no-assume-role"* ]]
 }
 @test "Write one AWS profile with no assume role and auth role name" {
-    export VAULT__FOO=AWS:/aws_deploy_role:12345678901:12345678901_deploy::some-separate-role
-    run ./vault-shim --kubernetes-jwt-location=token run-cmd --aws-config-file=aws-config-one-profile-no-assume-role-override -- /usr/bin/env
+    export VAULT__FOO=AWS:/aws_deploy_role:${AWS_TEST_ACCOUNT}:${AWS_TEST_ACCOUNT}_deploy::some-separate-role
+    run ./vault-shim --kubernetes-jwt-location=token --auth-type=kubernetes run-cmd --aws-config-file=aws-config-one-profile-no-assume-role-override -- /usr/bin/env
     assert_status 0
-    EXPECTED_FILE_OUTPUT='
+    EXPECTED_FILE_OUTPUT="
 [profile FOO]
-credential_process = vault-shim aws-credentials --namespace="" --secret-path="aws_deploy_role" --account-id="12345678901" --vault-sts-role-name="12345678901_deploy" --aws-assume-role-name="" --vault-role="some-separate-role"'
+credential_process = vault-shim aws-credentials --namespace=\"\" --secret-path=\"aws_deploy_role\" --account-id=\"${AWS_TEST_ACCOUNT}\" --vault-sts-role-name=\"${AWS_TEST_ACCOUNT}_deploy\" --aws-assume-role-name=\"\" --vault-role=\"some-separate-role\""
     cat aws-config-one-profile-no-assume-role-override
     [ "$(< aws-config-one-profile-no-assume-role-override)" == "$EXPECTED_FILE_OUTPUT" ]
     [[ "$output" == *"AWS_CONFIG_FILE=aws-config-one-profile-no-assume-role-override"* ]]

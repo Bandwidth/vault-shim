@@ -487,7 +487,7 @@ func GetVaultTokenAwsAuth(vaultRoleName string, vaultAddr string, authMount stri
 	if err != nil {
 		return "", err
 	}
-	loginData, err := GenerateLoginData("", os.Getenv("AWS_REGION"), vaultRoleName)
+	loginData, err := GenerateLoginData("", vaultRoleName)
 	if err != nil {
 		return "", err
 	}
@@ -558,14 +558,11 @@ func IsTokenValid(token string, vaultAddr string) bool {
 	return true
 }
 
-func GenerateLoginData(headerValue, configuredRegion string, vaultRoleName string) (map[string]interface{}, error) {
+func GenerateLoginData(headerValue, vaultRoleName string) (map[string]interface{}, error) {
 	loginData := make(map[string]interface{})
 
-	// Use the credentials we've found to construct an STS session
-	region, err := awsutil.GetRegion(configuredRegion)
-	if err != nil {
-		region = awsutil.DefaultRegion
-	}
+	// TODO: allow using different regions
+	region := awsutil.DefaultRegion
 	stsSession, err := session.NewSessionWithOptions(session.Options{
 		SharedConfigState: session.SharedConfigEnable,
 		Config: aws.Config{

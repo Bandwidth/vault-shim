@@ -141,6 +141,7 @@ func GetVaultToken() error {
 			if err != nil {
 				return err
 			}
+			return nil
 		}
 		err := awsAuth()
 		if err != nil {

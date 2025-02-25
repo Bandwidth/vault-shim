@@ -73,7 +73,7 @@ This small example demonstrates that vault-shim reads the environment for any va
 ```
 export VAULT__SECRETONE=workloads/foo/bar::secret:secret_one:FIRST_KEY
 export VAULT__SECRETTWO=workloads/foo/bar::secret:secret_two:SECOND_KEY
-./vault-shim run-cmd -- /usr/bin/env | grep SECRET
+./vault-shim run-cmd --vault-addr "vaultlocation:8200" -- /usr/bin/env | grep SECRET
 SECRETONE=whateversecretvaluewassetforsecretoneFIRST_KEY # the run-cmd here was /usr/bin/env so all of the env is printed and we grep for just our secrets so they are the only output in the example.
 SECRETTWO=whateversecretvaluewassetforsecrettwoSECOND_KEY
 ```
@@ -92,7 +92,7 @@ RUN ./vault-shim-installer.sh "<VERSION>"
 FROM python:3.12
 COPY example.py .
 COPY --from=vault-shim /usr/local/bin/vault-shim /usr/local/bin/vault-shim
-CMD ["vault-shim", "run-cmd", "--", "/usr/local/bin/python", "example.py"]
+CMD ["vault-shim", "run-cmd", "--vault-addr", "vaultlocation:8200", "--", "/usr/local/bin/python", "example.py"]
 ```
 example.py
 ```python
@@ -128,7 +128,7 @@ COPY --from=vault-shim /usr/local/bin/vault-shim /usr/local/bin/vault-shim
 
 COPY example.jar .
 
-ENTRYPOINT ["vault-shim", "run-cmd", "--", "/opt/java/openjdk/bin/java", "-jar", "example.jar"]
+ENTRYPOINT ["vault-shim", "run-cmd", "--vault-addr", "vaultlocation:8200", "--", "/opt/java/openjdk/bin/java", "-jar", "example.jar"]
 ```
 
 Atlas Application Deployment (The important part for this example is setting the AWS_PROFILE and VAULT__EXAMPLE env vars).

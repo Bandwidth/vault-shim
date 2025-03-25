@@ -53,8 +53,9 @@ var (
 			app.Dir = workingDir
 			app.Args = args[1:]
 			app.Env = env
-			if _, err := app.Run(); err != nil {
-				logrus.Fatal(err)
+			if processState, err := app.Run(); err != nil {
+				logrus.Error(err)
+				os.Exit(processState.ExitCode())
 			}
 			return nil
 		},

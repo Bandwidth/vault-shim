@@ -33,7 +33,7 @@ const iamServerIdHeader = "X-Vault-AWS-IAM-Server-ID"
 const CredentialProcessOutputVersion = 1
 
 // <namespace>::<mount>:<path>:<key>[@<version][::<export_name>]
-const VAULT_SECRET_REGEX_PATTERN = "^([a-zA-Z0-9\\/_-]+)::([a-zA-Z0-9_-]+):([a-zA-Z0-9\\/_ -]+):([a-zA-Z0-9_ -]+)(?:@(\\d))?$"
+const VAULT_SECRET_REGEX_PATTERN = "^([a-zA-Z0-9\\/_-]+)::([a-zA-Z0-9_-]+):([a-zA-Z0-9\\/_ .-]+):([a-zA-Z0-9_ -]+)(?:@(\\d))?$"
 
 var VaultRegex, _ = regexp.Compile(VAULT_SECRET_REGEX_PATTERN)
 

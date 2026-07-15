@@ -6,6 +6,7 @@ metadata:
   description: Hashicorp Vault sidecar libraries
   annotations:
     github.com/project-slug: Bandwidth/vault-shim
+    bandwidth.com/languages: Go
   organization: BW
   costCenter: Development - Software Infra
   platformType: AWS

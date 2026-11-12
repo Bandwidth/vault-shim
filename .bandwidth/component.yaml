@@ -13,6 +13,7 @@ metadata:
   buildPlatform: GitHub Actions
 spec:
   type: Library
+  system: vault
   owner: github/band-swi
   lifecycle: Prototype
   dependsOn:
